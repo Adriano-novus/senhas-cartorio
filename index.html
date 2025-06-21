@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Gerador de Senhas</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const senhaCorreta = "1234";
+      let tentativas = 3;
+      while (tentativas > 0) {
+        const entrada = prompt("Digite a senha para acessar:");
+        if (entrada === senhaCorreta) return;
+        tentativas--;
+        alert(`Senha incorreta. Tentativas restantes: ${tentativas}`);
+      }
+      document.body.innerHTML = "<h1 style='color:red; text-align:center; margin-top:20%'>Acesso negado</h1>";
+    });
+  </script>
+
+  <style>
+    body {
+      background: linear-gradient(to bottom, #f2f9ff, #ffffff);
+      font-family: 'Segoe UI', sans-serif;
+      padding: 2rem;
+      margin: 0;
+      color: #000;
+    }
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 1rem;
+      box-shadow: 0 0 20px rgba(0,0,0,0.1);
+      padding: 2rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4rem;
+      align-items: center;
+      justify-content: center;
+    }
+    .logo img {
+      max-height: 320px;
+    }
+    .conteudo {
+      flex: 1;
+      min-width: 300px;
+      text-align: center;
+    }
+    h1 {
+      font-size: 2.6rem;
+      color: #003b73;
+      margin-bottom: 2rem;
+    }
+    .botoes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+    }
+    button {
+      background: #007bff;
+      color: #fff;
+      font-size: 1.2rem;
+      padding: 1rem 2rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      transition: background 0.3s ease;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    .senha {
+      margin-top: 1.5rem;
+      font-size: 2rem;
+      font-weight: bold;
+      background: #f0f8ff;
+      padding: 1rem;
+      border-radius: 10px;
+      border: 1px solid #cce4ff;
+      color: #004080;
+    }
+    .ultimas {
+      margin-top: 2.5rem;
+      text-align: left;
+      font-size: 1.1rem;
+      background: #f9fcff;
+      border: 1px solid #cce1f0;
+      padding: 1.2rem;
+      border-radius: 10px;
+      color: #333;
+    }
+    .ultimas h2 {
+      font-size: 1.4rem;
+      color: #004080;
+      margin-bottom: 1rem;
+    }
+    .linha {
+      margin-bottom: 0.6rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">
+      <img src="logo_cartorio.png" alt="Logo do Cartório" />
+    </div>
+    <div class="conteudo">
+      <h1>Gerador de Senhas</h1>
+
+      <div class="botoes">
+        <button onclick="gerar('BAL')">Senha Balcão</button>
+        <button onclick="gerar('CER')">Senha Certidões</button>
+        <button onclick="gerar('PRO')">Senha Procurações</button>
+        <button onclick="gerar('CRC')">Senha CRC</button>
+        <button onclick="gerar('PC')">Senha Prioridade Certidões</button>
+      </div>
+
+      <div class="senha" id="senhaExibida">-</div>
+
+      <div class="ultimas">
+        <h2>Últimas Senhas Geradas</h2>
+        <div class="linha"><strong>Balcão:</strong> <span id="ULT_BAL">-</span></div>
+        <div class="linha"><strong>Certidões:</strong> <span id="ULT_CER">-</span></div>
+        <div class="linha"><strong>Procurações:</strong> <span id="ULT_PRO">-</span></div>
+        <div class="linha"><strong>CRC:</strong> <span id="ULT_CRC">-</span></div>
+        <div class="linha"><strong>Prioridade Certidões:</strong> <span id="ULT_PC">-</span></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let contadores = { BAL: 1, CER: 1, PRO: 1, CRC: 1, PC: 1 };
+    let atendente = null;
+
+    window.onload = () => {
+      atendente = window.open("atendente.html", "Atendente");
+      window.open("painel.html", "Painel");
+    };
+
+    async function gerar(tipo) {
+      const { jsPDF } = window.jspdf;
+      const prefixo =
+        tipo === 'BAL' ? 'B' :
+        tipo === 'CER' ? 'C' :
+        tipo === 'PRO' ? 'P' :
+        tipo === 'CRC' ? 'R' :
+        tipo === 'PC' ? 'PC' : '?';
+
+      const setorNome =
+        tipo === 'BAL' ? 'Balcão' :
+        tipo === 'CER' ? 'Certidões' :
+        tipo === 'PRO' ? 'Procurações' :
+        tipo === 'CRC' ? 'Certidões' :
+        tipo === 'PC' ? 'Certidões' :
+        'Setor';
+
+      const numero = String(contadores[tipo]++).padStart(3, '0');
+      const texto = `${prefixo}${numero}`;
+
+      document.getElementById("senhaExibida").textContent = `Senha ${texto}`;
+      document.getElementById(`ULT_${tipo}`).textContent = texto;
+
+      const doc = new jsPDF({ unit: "mm", format: [80, 70] });
+      const centerX = 35;
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(14);
+      doc.text("ATENDIMENTO", centerX, 18, { align: "center" });
+
+      doc.setFontSize(25);
+      doc.text(`Senha ${texto}`, centerX, 35, { align: "center" });
+
+      doc.setFontSize(16);
+      doc.text(`Setor: ${setorNome}`, centerX, 48, { align: "center" });
+
+      const agora = new Date().toLocaleString("pt-BR");
+      doc.setFontSize(10);
+      doc.text(`Emitido em: ${agora}`, centerX, 62, { align: "center" });
+
+      doc.autoPrint();
+      window.open(doc.output('bloburl'), '_blank');
+
+      const tipoEnvio = tipo === 'PC' ? 'CER' : tipo;
+      if (atendente && !atendente.closed) {
+        atendente.postMessage({ tipo: tipoEnvio, texto }, "*");
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Painel de Chamadas</title>
+  <style>
+    body {
+      background-color: #fff;
+      color: #000;
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 2rem;
+    }
+
+    .painel-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .relogio {
+      font-size: 4rem;
+      font-weight: bold;
+      color: #004080;
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+
+    .topo {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      gap: 4rem;
+      flex-wrap: wrap;
+      margin-bottom: 3rem;
+    }
+
+    .logo img {
+      max-height: 350px;
+      width: auto;
+    }
+
+    .geral {
+      text-align: center;
+    }
+
+    .geral h1 {
+      font-size: 2.6rem;
+      color: #004080;
+      margin-bottom: 1rem;
+    }
+
+    .geral .senha {
+      font-size: 5.2rem;
+      font-weight: bold;
+      background-color: #0056b3;
+      color: #fff;
+      padding: 1.6rem 2.6rem;
+      border-radius: 1rem;
+      box-shadow: 0 0 14px rgba(0, 86, 179, 0.6);
+      min-width: 260px;
+    }
+
+    .setores-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 2rem;
+      width: 100%;
+    }
+
+    .setor {
+      text-align: center;
+    }
+
+    .titulo {
+      font-size: 1.4rem;
+      color: #333;
+      margin-bottom: 0.5rem;
+    }
+
+    .senha {
+      font-size: 3.2rem;
+      font-weight: bold;
+      background: #007bff;
+      color: #fff;
+      padding: 1rem 1.6rem;
+      border-radius: 1rem;
+      display: inline-block;
+      min-width: 200px;
+      box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
+    }
+
+    .letreiro-wrapper {
+      width: 100%;
+      overflow: hidden;
+      background-color: #000;
+      border: 3px solid #007bff;
+      margin-top: 3rem;
+      position: relative;
+      height: 200px;
+      display: flex;
+      align-items: center;
+    }
+
+    .letreiro {
+      display: inline-block;
+      white-space: nowrap;
+      color: #007bff;
+      font-family: monospace;
+      font-size: 6rem;
+      padding: 1rem;
+      animation: deslizar 30s linear infinite;
+    }
+
+    @keyframes deslizar {
+      0%   { transform: translateX(100%); }
+      100% { transform: translateX(-100%); }
+    }
+  </style>
+</head>
+<body>
+  <div class="painel-container">
+    <div class="relogio" id="relogio">--:--:--</div>
+
+    <div class="topo">
+      <div class="logo">
+        <img src="logo_cartorio.png" alt="Logo do Cartório" />
+      </div>
+      <div class="geral">
+        <h1>Última Senha Geral</h1>
+        <div class="senha" id="ULTIMA">-</div>
+      </div>
+    </div>
+
+    <h2>ÚLTIMAS SENHAS POR SETOR</h2>
+    <div class="setores-container">
+      <div class="setor">
+        <div class="titulo">BALCÃO</div>
+        <div class="senha" id="BAL">-</div>
+      </div>
+      <div class="setor">
+        <div class="titulo">CERTIDÕES</div>
+        <div class="senha" id="CER">-</div>
+      </div>
+      <div class="setor">
+        <div class="titulo">PROCURAÇÕES</div>
+        <div class="senha" id="PRO">-</div>
+      </div>
+      <div class="setor">
+        <div class="titulo">CRC</div>
+        <div class="senha" id="CRC">-</div>
+      </div>
+    </div>
+
+    <div class="letreiro-wrapper">
+      <div class="letreiro" id="letreiro">Bem-vindo ao Cartório! Atendimento com horário marcado. Promoções nas certidões esta semana. Acesse nosso site!</div>
+    </div>
+  </div>
+
+  <script>
+    const canal = new BroadcastChannel("painel");
+
+    canal.onmessage = (event) => {
+      const { tipo, chamada } = event.data;
+      if (!chamada || chamada.trim() === "" || chamada === "-") return;
+      if (tipo && document.getElementById(tipo)) {
+        document.getElementById(tipo).textContent = chamada;
+        document.getElementById("ULTIMA").textContent = `${chamada} (${setorNome(tipo)})`;
+        setTimeout(() => falar(tipo, chamada), 400);
+      }
+    };
+
+    function setorNome(tipo) {
+      return tipo === "BAL" ? "Balcão" :
+             tipo === "CER" ? "Certidões" :
+             tipo === "PRO" ? "Procurações" :
+             tipo === "CRC" ? "CRC" : "Setor Desconhecido";
+    }
+
+    function falar(tipo, texto) {
+      const setor = setorNome(tipo);
+      const frase = `Senha ${texto}, por favor dirigir-se ao setor ${setor}`;
+      const synth = window.speechSynthesis;
+
+      const dizer = () => {
+        const vozes = synth.getVoices();
+        const vozFem = vozes.find(v => 
+          v.lang.startsWith("pt") && 
+          (v.name.toLowerCase().includes("feminina") ||
+           v.name.toLowerCase().includes("female") ||
+           v.name.toLowerCase().includes("br")) // Ajustável conforme sistema
+        ) || vozes.find(v => v.lang.startsWith("pt"));
+
+        for (let i = 0; i < 2; i++) {
+          const fala = new SpeechSynthesisUtterance(frase);
+          fala.lang = "pt-BR";
+          if (vozFem) fala.voice = vozFem;
+          fala.rate = 0.85;
+          fala.pitch = 1;
+          synth.speak(fala);
+        }
+      };
+
+      if (synth.getVoices().length === 0) {
+        synth.onvoiceschanged = dizer;
+      } else {
+        dizer();
+      }
+    }
+
+    function atualizaRelogio() {
+      const agora = new Date();
+      const hora = agora.toLocaleTimeString('pt-BR');
+      const data = agora.toLocaleDateString('pt-BR', {
+        weekday: 'long', day: '2-digit', month: 'long', year: 'numeric'
+      });
+      document.getElementById("relogio").textContent = `${data} — ${hora}`;
+    }
+
+    setInterval(atualizaRelogio, 1000);
+  </script>
+</body>
+</html>
